@@ -1,31 +1,6 @@
 """ Model Architecture Module
 """
-"""
-org implementation in torch
-class MDNet(nn.Module):
-    def __init__(self, model_path=None, K=1):
-        super(MDNet, self).__init__()
-        self.K = K
-        self.layers = nn.Sequential(OrderedDict([
-                ('conv1', nn.Sequential(nn.Conv2d(3, 96, kernel_size=7, stride=2),
-                                        nn.ReLU(inplace=True),
-                                        nn.LocalResponseNorm(2),
-                                        nn.MaxPool2d(kernel_size=3, stride=2))),
-                ('conv2', nn.Sequential(nn.Conv2d(96, 256, kernel_size=5, stride=2),
-                                        nn.ReLU(inplace=True),
-                                        nn.LocalResponseNorm(2),
-                                        nn.MaxPool2d(kernel_size=3, stride=2))),
-                ('conv3', nn.Sequential(nn.Conv2d(256, 512, kernel_size=3, stride=1),
-                                        nn.ReLU(inplace=True))),
-                ('fc4',   nn.Sequential(nn.Linear(512 * 3 * 3, 512),
-                                        nn.ReLU(inplace=True))),
-                ('fc5',   nn.Sequential(nn.Dropout(0.5),
-                                        nn.Linear(512, 512),
-                                        nn.ReLU(inplace=True)))]))
 
-        self.branches = nn.ModuleList([nn.Sequential(nn.Dropout(0.5),
-                                                     nn.Linear(512, 2)) for _ in range(K)])
-"""
 from tinygrad.tensor import Tensor
 import tinygrad.nn as nn
 
@@ -34,20 +9,30 @@ class tinyMDNet():
         super(tinyMDNet, self).__init__()
         self.K = K
         self.conv1 = nn.Conv2d(3, 96, kernel_size=7, stride=2)
+        self.bn1 = nn.BatchNorm2D(96)
         self.conv2 = nn.Conv2d(96, 256, kernel_size=5, stride=2)
+        self.bn2 = nn.BatchNorm2D(256)
         self.conv3 = nn.Conv2d(256, 512, kernel_size=3, stride=2)
-        #self.linear1 = nn.Linear(512*3*3, 512)
-        #self.linear2 = nn.Linear(512, 512)
-        #self.branches = [nn.Linear(512, 2) for _ in range(K)]
+        self.linear1 = nn.Linear(512*4*4, 512)
+        self.linear2 = nn.Linear(512, 512)
+        self.branches = [nn.Linear(512, 2) for _ in range(K)]
     
-    def forward(self, x):
+    def forward(self, x, k=0):
         x = self.conv1(x)
-        # add relu, norm and max pool
+        x = x.relu()
+        x = self.bn1(x)
+        x = x.max_pool2d(kernel_size=(3,3))
         x = self.conv2(x)
-        # addd relu, norm and max pool
+        x = self.bn2(x)
+        x = x.max_pool2d(kernel_size=(2,2))
+        x = x.relu()
         x = self.conv3(x)
-        # addd relu, norm and max pool
-        #x = self.linear1(x.reshape())
+        x = x.relu()
+        x = self.linear1(x.reshape(x.shape[0], x.shape[1]*x.shape[2]*x.shape[3]))
+        x = x.dropout(0.5)
+        x = self.linear2(x)
+        x = x.dropout(0.5)
+        x = self.branches[k](x)
         return x
 
     def __call__(self, x):
@@ -58,4 +43,3 @@ if __name__ == "__main__":
     x = Tensor.ones(1,3,256,256)
     out = model(x)
     print(out.shape)
-
