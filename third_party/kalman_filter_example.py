@@ -36,7 +36,7 @@ if __name__ == "__main__":
     while True:
         state = 0.1 * np.random.randn(4, 1)
 
-        kalman.transitionMatrix = np.array([[1., 1., 1., 1.], [0., 1., 1., 1.], [0. ,0. ,1., 1.], [0., 0., 0., 1.]])
+        kalman.transitionMatrix = np.array([[1., 0., 1., 0.], [0., 1., 0., 1.], [0. ,0. ,1., 1.], [0., 0., 0., 1.]])
         kalman.measurementMatrix = 1. * np.ones((1, 4))
         kalman.processNoiseCov = 1e-5 * np.eye(4)
         kalman.measurementNoiseCov = 1e-1 * np.ones((1, 1))
@@ -47,8 +47,14 @@ if __name__ == "__main__":
             def calc_point(angle):
                 return (np.around(img_width/2 + img_width/3*cos(angle), 0).astype(int),
                         np.around(img_height/2 - img_width/3*sin(angle), 1).astype(int))
+            
+            def calc_bbox_wh(angle):
+                return (np.around(img_width/2 + img_width/3*cos(angle), 0).astype(int),
+                        np.around(img_height/2 - img_width/3*sin(angle), 1).astype(int))
 
             state_angle = state[0, 0]
+            state_w = state[1, 0]
+            state_h = state[2, 0]
             state_pt = calc_point(state_angle)
             print(state_pt)
 
@@ -66,10 +72,10 @@ if __name__ == "__main__":
 
             # plot points
             def draw_bbox(center, color, d):
-                top = center[1] - bbox_w
-                left = center[0] - bbox_h
-                bottom = center[1] + bbox_w
-                right = center[0] + bbox_h
+                top = center[0] - int(state_w)
+                left = center[1] - int(state_h)
+                bottom = center[0] + int(state_w)
+                right = center[1] + int(state_h)
                 cv2.rectangle(img, (top, left), (bottom, right), color, 1, cv2.LINE_AA, 0)
 
             def draw_cross(center, color, d):
