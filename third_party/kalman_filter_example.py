@@ -47,10 +47,6 @@ if __name__ == "__main__":
             def calc_point(angle):
                 return (np.around(img_width/2 + img_width/3*cos(angle), 0).astype(int),
                         np.around(img_height/2 - img_width/3*sin(angle), 1).astype(int))
-            
-            def calc_bbox_wh(angle):
-                return (np.around(img_width/2 + img_width/3*cos(angle), 0).astype(int),
-                        np.around(img_height/2 - img_width/3*sin(angle), 1).astype(int))
 
             state_angle = state[0, 0]
             state_w = state[1, 0]
@@ -60,6 +56,8 @@ if __name__ == "__main__":
 
             prediction = kalman.predict()
             predict_angle = prediction[0, 0]
+            predict_w = prediction[1, 0]
+            predict_h = prediction[2, 0]
             predict_pt = calc_point(predict_angle)
 
             measurement = kalman.measurementNoiseCov * np.random.randn(1, 1)
@@ -68,14 +66,16 @@ if __name__ == "__main__":
             measurement = np.dot(kalman.measurementMatrix, state) + measurement
 
             measurement_angle = measurement[0, 0]
+            #measurement_w = measurement[1, 0]
+            #measurement_h = measurement[2, 0]
             measurement_pt = calc_point(measurement_angle)
 
             # plot points
-            def draw_bbox(center, color, d):
-                top = center[0] - int(state_w)
-                left = center[1] - int(state_h)
-                bottom = center[0] + int(state_w)
-                right = center[1] + int(state_h)
+            def draw_bbox(center, color, w, h, d):
+                top = center[0] - int(w)
+                left = center[1] - int(h)
+                bottom = center[0] + int(w)
+                right = center[1] + int(h)
                 cv2.rectangle(img, (top, left), (bottom, right), color, 1, cv2.LINE_AA, 0)
 
             def draw_cross(center, color, d):
@@ -87,8 +87,10 @@ if __name__ == "__main__":
                          color, 1, cv2.LINE_AA, 0)
 
             img = np.zeros((img_height, img_width, 3), np.uint8)
-            draw_cross(np.int32(state_pt), (255, 255, 255), 3)
-            draw_bbox(np.int32(state_pt), (0, 255, 0), 3)
+            #draw_cross(np.int32(state_pt), (255, 255, 255), 3)
+            draw_bbox(np.int32(state_pt), (0, 255, 0), state_w, state_h, 3)
+            draw_bbox(np.int32(state_pt), (255, 0, 0), predict_w, predict_h, 3)
+            #draw_bbox(np.int32(state_pt), (0, 255, 0), 3)
             #draw_cross(np.int32(measurement_pt), (0, 0, 255), 3)
             #draw_cross(np.int32(predict_pt), (0, 255, 0), 3)
 
