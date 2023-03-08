@@ -3,6 +3,7 @@
 
 from tinygrad.tensor import Tensor
 import tinygrad.nn as nn
+import torch
 
 class tinyMDNet():
     def __init__(self, K=1):
@@ -38,8 +39,20 @@ class tinyMDNet():
     def __call__(self, x):
         return self.forward(x)
 
+class ResNet():
+    def __init__(self) -> None:
+        self.model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=False)
+        self.model.fc = torch.nn.Linear(512, 2)
+    def __call__(self, x):
+        output = self.model(x)
+        return output
+
 if __name__ == "__main__":
-    model = tinyMDNet()
+    mdnet = tinyMDNet()
+    resnet = ResNet()
     x = Tensor.ones(1,3,256,256)
-    out = model(x)
-    print(out.shape)
+    out = mdnet(x)
+    x = torch.rand(1,3,255,255)
+    out_res = resnet(x)
+
+    print(out.shape, out_res.size())
