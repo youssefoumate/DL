@@ -23,7 +23,8 @@ class Sampling():
         bbox_w = 10
         bbox_h = 20
         code = -1
-        cv2.namedWindow("Kalman")
+        self.gt = np.array([10, 10, 40, 80])
+        #cv2.namedWindow("Kalman")
 
     def kalman_sampling(self):
         #TODO implement soon
@@ -47,31 +48,26 @@ class Sampling():
         samples[:, :2] -= samples[:, 2:] / 2
         return samples
 
-    def vis(self, samples, gt):
-        #fig = plt.figure()
-        #ax = fig.add_subplot(111, aspect='equal')
-        gt = np.array(gt, dtype='int') / 512
-        gt = patches.Rectangle((gt[0], gt[1]),
-                               gt[2],
-                               gt[3],
-                               linewidth=5,
-                               edgecolor='b',
-                               facecolor='none')
-        plt.gca().add_patch(gt)
-        for sample in samples:
-            sample = np.array(sample, dtype='int') / 512
-            rect = patches.Rectangle((sample[0], sample[1]),
-                                     sample[2],
-                                     sample[3],
-                                     linewidth=1,
-                                     edgecolor='r',
-                                     facecolor='none')
-            plt.gca().add_patch(rect)
-        plt.show()
+    def vis(self):
+        for offset in range(25):
+            self.gt[:2] = self.gt[:2] + offset
+            gt = self.gt
+            samples =   self.norm_sampling(512, gt, 100)
+            black_img = np.zeros((512, 512, 3), dtype=np.uint8)
+            cv2.rectangle(black_img, 
+                        (gt[0], gt[1]),
+                        (gt[0]+gt[2], gt[1]+gt[3]),
+                        (0,255,0), 1)
+            for sample in samples:
+                cv2.rectangle(black_img, 
+                        (int(sample[0]), int(sample[1])),
+                        (int(sample[0]+sample[2]), int(sample[1]+sample[3])),
+                        (0,0,255), 1)
+            cv2.imshow("img", black_img)
+            cv2.waitKey(300)
+            
 
 
-if __name__ == "__main__":
-    gt = [256, 256, 40, 80]
+if __name__ == "__main__": 
     sampler = Sampling()
-    samples = sampler.norm_sampling(512, gt, 100)
-    sampler.vis(samples, gt)
+    sampler.vis()
