@@ -9,25 +9,22 @@ import numpy as np
 class Sampling():
 
     def __init__(self):
-
-        self.transitionMatrix = np.array([[1., 0., 1., 0.], [0., 1., 0., 1.],
-                                          [0., 0., 1., 1.], [0., 0., 0., 1.]])
-        self.measurementMatrix = 1. * np.ones((1, 4))
-        self.processNoiseCov = 1e-5 * np.eye(4)
-        self.measurementNoiseCov = 1e-1 * np.ones((1, 1))
-        self.errorCovPost = 1. * np.ones((4, 4))
-        self.statePost = 0.1 * np.random.randn(4, 1)
-        img_height = 500
-        img_width = 500
-        self.kalman = cv2.KalmanFilter(2, 1, 0)
-        bbox_w = 10
-        bbox_h = 20
-        code = -1
+        #num. of candidates
+        self.num_sample = 50
+        #initial box
         self.gt = np.array([10, 10, 40, 80])
-        #cv2.namedWindow("Kalman")
+        #kalman params
+        self.kalman = cv2.KalmanFilter(self.gt.shape[0], self.gt.shape[0], 0)
+        self.transitionMatrix = np.array([[1., 0., 0.1, 0.], 
+                                          [0., 1., 0., 0.1],
+                                          [0., 0., 1., 0.], 
+                                          [0., 0., 0., 1.]])# np.dot(kalman.transitionMatrix, state)
+        self.measurementMatrix = 1. * np.ones((self.num_sample, self.gt.shape[0])) #np.dot(kalman.measurementMatrix, state)
+        self.processNoiseCov = 1e-5 * np.eye(self.num_sample) #sqrt(kalman.processNoiseCov[0,0]) * np.random.randn(50, 1)
+        self.measurementNoiseCov = 1e-1 * np.ones((1, 1)) #kalman.measurementNoiseCov * np.random.randn(1, 1)
 
-    def kalman_sampling(self):
-        #TODO implement soon
+    def kalman_filtering(self):
+        
         pass
 
     def norm_sampling(self, img_size, bb, n):
@@ -52,7 +49,7 @@ class Sampling():
         for offset in range(25):
             self.gt[:2] = self.gt[:2] + offset
             gt = self.gt
-            samples =   self.norm_sampling(512, gt, 100)
+            samples =  self.norm_sampling(512, gt, self.num_sample)
             black_img = np.zeros((512, 512, 3), dtype=np.uint8)
             cv2.rectangle(black_img, 
                         (gt[0], gt[1]),
