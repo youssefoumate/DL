@@ -58,22 +58,26 @@ class Sampling():
         for state_idx in range(len(state)):
             measurements.append([state[state_idx][0], state[state_idx][1]])
         measurements = np.array(measurements).astype(np.float32)
+        predictions = []
         for sample_idx in range(self.num_samples):
             prediction = self.filters[sample_idx].predict()[:2] # Predict next state of point i
             correction = self.filters[sample_idx].correct(measurements[sample_idx].reshape(-1,1))[:2] # Correct state estimate with measurement of point i
             prediction_x,prediction_y= prediction.flatten().astype(int)
+            predictions.append([prediction_x,prediction_y])
             correction_x ,correction_y= correction.flatten().astype(int)
             measured_x ,measured_y= measurements[sample_idx].astype(int)
-            print(prediction)
-        exit()
-        return prediction
+        return predictions, measurements
 
     def vis(self):
         for offset in range(25):
             self.gt[:2] = self.gt[:2] + offset
             gt = self.gt
-            samples = self.kalman_sampling(gt)
-            black_img = np.zeros((512, 512, 3), dtype=np.uint8)
+            preds, measures = self.kalman_sampling(gt)
+            black_img = np.zeros((self.img_size, self.img_size, 3), dtype=np.uint8)
+            for measure, pred in zip(measures, preds):
+                cv2.circle(black_img,(int(measure[0]),int(measure[1])),1,(0,255,0),2,cv2.LINE_AA)# Draw predicted point
+                cv2.circle(black_img,(int(pred[0]),int(pred[1])),1,(0,0,255),2,cv2.LINE_AA)# Draw predicted point
+            """
             cv2.rectangle(black_img, (gt[0], gt[1]),
                           (gt[0] + gt[2], gt[1] + gt[3]), (0, 255, 0), 1)
             for sample in samples:
@@ -81,8 +85,9 @@ class Sampling():
                     black_img, (int(sample[0]), int(sample[1])),
                     (int(sample[0] + sample[2]), int(sample[1] + sample[3])),
                     (0, 0, 255), 1)
+            """
             cv2.imshow("img", black_img)
-            cv2.waitKey(300)
+            cv2.waitKey(1000)
 
 
 if __name__ == "__main__":
