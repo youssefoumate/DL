@@ -32,7 +32,7 @@ def create_dummy_video(num_frames = 50):
             vx *= -1 # reverse x component of velocity 
         if y + r > image.shape[0] or y - r < 0: # bottom or top boundary 
             vy *= -1 # reverse y component of velocity 
-        yield image
+        yield image, [x, y, r*2, r*2]
 
         
 

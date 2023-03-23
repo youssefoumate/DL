@@ -15,8 +15,9 @@ class Sampling():
         #initial box
         self.gt = np.array([10., 10., 40., 80.])
         self.filters = []
-        self.init_state = self.norm_sampling(self.gt)
-        #kalman params
+
+    def kalman_setup(self, gt):
+        init_state = self.norm_sampling(gt)
         for i in range(self.num_samples):
             kalman = cv2.KalmanFilter(4, 2) # State size: 4 (x, y, dx, dy), Measurement size: 2 (x, y)
             kalman.transitionMatrix = np.array([[1., 0., 1., 0.], # State transition model
@@ -28,7 +29,7 @@ class Sampling():
             kalman.processNoiseCov = np.eye(4).astype(np.float32) * (10 ** -3) # Process noise covariance
             kalman.measurementNoiseCov = np.eye(2).astype(np.float32) * (10 ** -2) # Measurement noise covariance
             kalman.errorCovPost = np.eye(4).astype(np.float32) * (10 ** -3) # Posteriori error estimate covariance matrix
-            kalman.statePost = np.array([self.init_state[i][0], self.init_state[i][1], 
+            kalman.statePost = np.array([init_state[i][0], init_state[i][1], 
                                     np.random.randn(), 
                                     np.random.randn()], dtype=np.float32).reshape(-1,1) # Initial state estimate
             self.filters.append(kalman)
@@ -74,26 +75,23 @@ class Sampling():
             rois.append(image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :])
         return rois
 
-    def sample_generator(self, show=True):
-        for offset in range(25):
-            self.gt[:2] = self.gt[:2] + offset
-            gt = self.gt
-            preds, measures = self.kalman_sampling(gt)
-            black_img = np.zeros((self.img_size, self.img_size, 3), dtype=np.uint8)
-            rois = self.roi_crop(black_img, preds+measures, self.gt[2], self.gt[3], show=True)
-            if show:
-                for measure, pred, roi in zip(measures, preds, rois):
-                    cv2.rectangle(
-                        black_img, (int(measure[0] - self.gt[2]/2), int(measure[1] - self.gt[3]/2)),
-                        (int(measure[0] + self.gt[2]/2), int(measure[1] + self.gt[3]/2)),
-                        (0, 255, 0), 1)
-                    cv2.rectangle(
-                        black_img, (int(pred[0] - self.gt[2]/2), int(pred[1] - self.gt[3]/2)),
-                        (int(pred[0] + self.gt[2]/2), int(pred[1] + self.gt[3]/2)),
-                        (0, 0, 255), 1)
-                    cv2.imshow("roi", roi)
-                    cv2.imshow("img", black_img)
-                    cv2.waitKey(200)
+    def sample_generator(self, image, gt, show=True):
+        self.kalman_setup(gt)
+        preds, measures = self.kalman_sampling(gt)
+        rois = self.roi_crop(image, preds+measures, gt[2], gt[3], show=True)
+        if show:
+            for measure, pred, roi in zip(measures, preds, rois):
+                cv2.rectangle(
+                    image, (int(measure[0] - gt[2]/2), int(measure[1] - gt[3]/2)),
+                    (int(measure[0] + gt[2]/2), int(measure[1] + gt[3]/2)),
+                    (0, 255, 0), 1)
+                cv2.rectangle(
+                    image, (int(pred[0] - gt[2]/2), int(pred[1] - gt[3]/2)),
+                    (int(pred[0] + gt[2]/2), int(pred[1] + gt[3]/2)),
+                    (0, 0, 255), 1)
+                cv2.imshow("roi", roi)
+                cv2.imshow("img", image)
+                cv2.waitKey(200)
         return rois
 
 
