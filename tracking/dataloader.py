@@ -67,29 +67,36 @@ class Sampling():
             correction_x ,correction_y= correction.flatten().astype(int)
             measured_x ,measured_y= measurements[sample_idx].astype(int)
         return predictions, measurements
+    
+    def roi_crop(self, image, centers, w, h, show=False):
+        rois = []
+        for center in centers:
+            rois.append(image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :])
+        return rois
 
-    def vis(self):
+    def sample_generator(self, show=True):
         for offset in range(25):
             self.gt[:2] = self.gt[:2] + offset
             gt = self.gt
             preds, measures = self.kalman_sampling(gt)
             black_img = np.zeros((self.img_size, self.img_size, 3), dtype=np.uint8)
-            for measure, pred in zip(measures, preds):
-                cv2.circle(black_img,(int(measure[0]),int(measure[1])),1,(0,255,0),2,cv2.LINE_AA)# Draw predicted point
-                cv2.circle(black_img,(int(pred[0]),int(pred[1])),1,(0,0,255),2,cv2.LINE_AA)# Draw predicted point
-            """
-            cv2.rectangle(black_img, (gt[0], gt[1]),
-                          (gt[0] + gt[2], gt[1] + gt[3]), (0, 255, 0), 1)
-            for sample in samples:
-                cv2.rectangle(
-                    black_img, (int(sample[0]), int(sample[1])),
-                    (int(sample[0] + sample[2]), int(sample[1] + sample[3])),
-                    (0, 0, 255), 1)
-            """
-            cv2.imshow("img", black_img)
-            cv2.waitKey(1000)
+            rois = self.roi_crop(black_img, preds+measures, self.gt[2], self.gt[3], show=True)
+            if show:
+                for measure, pred, roi in zip(measures, preds, rois):
+                    cv2.rectangle(
+                        black_img, (int(measure[0] - self.gt[2]/2), int(measure[1] - self.gt[3]/2)),
+                        (int(measure[0] + self.gt[2]/2), int(measure[1] + self.gt[3]/2)),
+                        (0, 255, 0), 1)
+                    cv2.rectangle(
+                        black_img, (int(pred[0] - self.gt[2]/2), int(pred[1] - self.gt[3]/2)),
+                        (int(pred[0] + self.gt[2]/2), int(pred[1] + self.gt[3]/2)),
+                        (0, 0, 255), 1)
+                    cv2.imshow("roi", roi)
+                    cv2.imshow("img", black_img)
+                    cv2.waitKey(200)
+        return rois
 
 
 if __name__ == "__main__":
     sampler = Sampling()
-    sampler.vis()
+    rois = sampler.sample_generator()
