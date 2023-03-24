@@ -4,15 +4,16 @@ sys.path.append("..")
 from utils.dummy_video import create_dummy_video
 from dataloader import Sampling
 import cv2
+import torch
 
 class Tracker():
     def __init__(self) -> None:
-        self.backbone = ResNet()
+        self.model = ResNet()
         self.num_frames = 1000
         self.sampler = Sampling()
         pass
     def init_train(self, init_frame=None, init_gt=None, epochs=10):
-        rois = self.sampler.sample_generator(init_frame, init_gt, show=True)
+        rois, labels = self.sampler.sample_generator(init_frame, init_gt, show=True)
     def track(self):
         frame_gen = create_dummy_video(self.num_frames)
         init_frame = next(frame_gen)

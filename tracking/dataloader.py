@@ -4,6 +4,7 @@ import matplotlib.patches as patches
 import cv2
 from math import cos, sin, sqrt
 import numpy as np
+from utils.iou import calc_iou
 
 
 class Sampling():
@@ -74,25 +75,39 @@ class Sampling():
         for center in centers:
             rois.append(image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :])
         return rois
-
+    
+    def generate_labels(self, boxes, gt, thresh=0.7):
+        labels = []
+        for box in boxes:
+            iou_score = calc_iou(box, gt)
+            if iou_score > thresh:
+                label = 1
+            else:
+                label = 0
+            labels.append(label)
+        return labels
+            
     def sample_generator(self, image, gt, show=True):
         self.kalman_setup(gt)
         preds, measures = self.kalman_sampling(gt)
-        rois = self.roi_crop(image, preds+measures, gt[2], gt[3], show=True)
-        if show:
-            for measure, pred, roi in zip(measures, preds, rois):
-                cv2.rectangle(
-                    image, (int(measure[0] - gt[2]/2), int(measure[1] - gt[3]/2)),
-                    (int(measure[0] + gt[2]/2), int(measure[1] + gt[3]/2)),
+        preds.extend(measures)
+        rois = self.roi_crop(image, preds, gt[2], gt[3], show=True)
+        labels = self.generate_labels(preds, gt)
+        cv2.rectangle(
+                    image, (int(gt[0] - gt[2]/2), int(gt[1] - gt[3]/2)),
+                    (int(gt[0] + gt[2]/2), int(gt[1] + gt[3]/2)),
                     (0, 255, 0), 1)
+        if show:
+            for pred_box, roi, label in zip(preds, rois, labels):
+                pred_color = (255*label, 0, 255*(1 - label))
                 cv2.rectangle(
-                    image, (int(pred[0] - gt[2]/2), int(pred[1] - gt[3]/2)),
-                    (int(pred[0] + gt[2]/2), int(pred[1] + gt[3]/2)),
-                    (0, 0, 255), 1)
+                    image, (int(pred_box[0] - gt[2]/2), int(pred_box[1] - gt[3]/2)),
+                    (int(pred_box[0] + gt[2]/2), int(pred_box[1] + gt[3]/2)),
+                    pred_color, 1)
                 cv2.imshow("roi", roi)
                 cv2.imshow("img", image)
-                cv2.waitKey(200)
-        return rois
+                cv2.waitKey(0)
+        return rois, labels
 
 
 if __name__ == "__main__":
