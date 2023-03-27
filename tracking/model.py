@@ -39,10 +39,11 @@ class tinyMDNet():
     def __call__(self, x):
         return self.forward(x)
 
-class ResNet():
+class ResNet(torch.nn.Module):
     def __init__(self) -> None:
+        super().__init__()
         self.model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=False)
-        self.model.fc = torch.nn.Linear(512, 2)
+        self.model.fc = torch.nn.Linear(512, 1)
     def __call__(self, x):
         output = self.model(x)
         return output

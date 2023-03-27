@@ -70,10 +70,13 @@ class Sampling():
             measured_x ,measured_y= measurements[sample_idx].astype(int)
         return predictions, measurements
     
-    def roi_crop(self, image, centers, w, h, show=False):
+    def roi_crop(self, image, centers, w, h, size=114, show=False):
         rois = []
         for center in centers:
-            rois.append(image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :])
+            crop = image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :]
+            crop_resized = cv2.resize(crop, (size, size))
+            crop_resized = crop_resized.transpose(2, 0, 1)
+            rois.append(crop_resized)
         return rois
     
     def generate_labels(self, boxes, gt, thresh=0.7):
