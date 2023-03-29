@@ -96,11 +96,11 @@ class Sampling():
         preds.extend(measures)
         rois = self.roi_crop(image, preds, gt[2], gt[3], show=True)
         labels = self.generate_labels(preds, gt)
-        cv2.rectangle(
+        if show:
+            cv2.rectangle(
                     image, (int(gt[0] - gt[2]/2), int(gt[1] - gt[3]/2)),
                     (int(gt[0] + gt[2]/2), int(gt[1] + gt[3]/2)),
                     (0, 255, 0), 1)
-        if show:
             for pred_box, roi, label in zip(preds, rois, labels):
                 pred_color = (255*label, 0, 255*(1 - label))
                 cv2.rectangle(
@@ -110,7 +110,7 @@ class Sampling():
                 cv2.imshow("roi", roi)
                 cv2.imshow("img", image)
                 cv2.waitKey(0)
-        return rois, labels
+        return rois, preds, labels
 
 
 if __name__ == "__main__":

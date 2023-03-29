@@ -7,6 +7,7 @@ import cv2
 import torch
 from losses import bce_loss
 from tqdm import tqdm
+
 class Tracker():
     def __init__(self) -> None:
         self.model = ResNet()
@@ -17,7 +18,7 @@ class Tracker():
     def init_train(self, init_frame=None, init_gt=None, epochs=10):
         optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
         for _ in tqdm(range(epochs)):
-            rois, labels = self.sampler.sample_generator(init_frame, init_gt, show=False)
+            rois, _, labels = self.sampler.sample_generator(init_frame, init_gt, show=False)
             sum_loss = 0
             for roi, label in zip(rois, labels):
                 roi = roi/255
@@ -30,27 +31,32 @@ class Tracker():
                 optimizer.step()
                 sum_loss += loss.item()
             print(loss/len(rois))
-            
+
     def track(self):
         frame_gen = create_dummy_video(self.num_frames)
         init_frame = next(frame_gen)
-        self.init_train(init_frame[0], init_frame[1])
+        gt = init_frame[1]
+        self.init_train(init_frame[0], gt)
         self.model.eval()
-        for frame, gt in frame_gen:
-            rois, labels = self.sampler.sample_generator(frame, gt, show=False)
+        for frame, _ in frame_gen:
+            rois, coords, _ = self.sampler.sample_generator(frame, gt, show=False)
             max_roi = None
             max_score = 0
-            for roi_idx, roi in enumerate(rois):
+            max_coord = []
+            for roi_idx, (coord, roi) in enumerate(zip(coords, rois)):
                 roi = roi/255
                 roi = torch.tensor(roi, dtype=torch.float32)
                 score = self.model(roi.unsqueeze(0))
-                if roi_idx == 0:
+                if score > max_score or roi_idx == 0:
                     max_score = score
                     max_roi = roi
-                if score > max_score:
-                    max_score = score
-                    max_roi = roi
-            cv2.imshow("roi", max_roi.squeeze(0).permute(1,2,0).numpy())
+                    max_coord = coord
+            gt = [max_coord[0], max_coord[1], gt[2], gt[3]]
+            cv2.rectangle(
+                    frame, (int(max_coord[0] - gt[2]/2), int(max_coord[1] - gt[3]/2)),
+                    (int(max_coord[0] + gt[2]/2), int(max_coord[1] + gt[3]/2)),
+                    (0, 255, 0), 1)
+            cv2.imshow("frame", frame)
             cv2.waitKey(10)
 
         cv2.destroyAllWindows()
