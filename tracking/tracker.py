@@ -30,15 +30,29 @@ class Tracker():
                 optimizer.step()
                 sum_loss += loss.item()
             print(loss/len(rois))
+            
     def track(self):
         frame_gen = create_dummy_video(self.num_frames)
         init_frame = next(frame_gen)
         self.init_train(init_frame[0], init_frame[1])
-        """
-        for frame in frame_gen:
-            cv2.imshow("frame", frame)
+        self.model.eval()
+        for frame, gt in frame_gen:
+            rois, labels = self.sampler.sample_generator(frame, gt, show=False)
+            max_roi = None
+            max_score = 0
+            for roi_idx, roi in enumerate(rois):
+                roi = roi/255
+                roi = torch.tensor(roi, dtype=torch.float32)
+                score = self.model(roi.unsqueeze(0))
+                if roi_idx == 0:
+                    max_score = score
+                    max_roi = roi
+                if score > max_score:
+                    max_score = score
+                    max_roi = roi
+            cv2.imshow("roi", max_roi.squeeze(0).permute(1,2,0).numpy())
             cv2.waitKey(10)
-        """
+
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
