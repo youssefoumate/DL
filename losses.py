@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-bce_loss = nn.BCELoss()
+bce_loss = nn.BCELoss(weight=torch.tensor([10]))
 
 if __name__ == "__main__":
     m = nn.Sigmoid()

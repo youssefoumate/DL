@@ -79,7 +79,7 @@ class Sampling():
             rois.append(crop_resized)
         return rois
     
-    def generate_labels(self, boxes, gt, thresh=0.7):
+    def generate_labels(self, boxes, gt, thresh=0.1):
         labels = []
         for box in boxes:
             iou_score = calc_iou(box, gt)

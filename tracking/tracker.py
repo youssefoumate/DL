@@ -16,7 +16,7 @@ class Tracker():
         self.sigmoid = torch.nn.Sigmoid()
         pass
     def init_train(self, init_frame=None, init_gt=None, epochs=10):
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         for _ in tqdm(range(epochs)):
             rois, _, labels = self.sampler.sample_generator(init_frame, init_gt, show=False)
             sum_loss = 0
@@ -53,8 +53,8 @@ class Tracker():
                     max_coord = coord
             gt = [max_coord[0], max_coord[1], gt[2], gt[3]]
             cv2.rectangle(
-                    frame, (int(max_coord[0] - gt[2]/2), int(max_coord[1] - gt[3]/2)),
-                    (int(max_coord[0] + gt[2]/2), int(max_coord[1] + gt[3]/2)),
+                    frame, (int(gt[1] - gt[2]/2), int(gt[0] - gt[3]/2)),
+                    (int(gt[1] + gt[2]/2), int(gt[0] + gt[3]/2)),
                     (0, 255, 0), 1)
             cv2.imshow("frame", frame)
             cv2.waitKey(10)
