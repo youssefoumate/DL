@@ -74,12 +74,14 @@ class Sampling():
         rois = []
         for center in centers:
             crop = image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :]
+            if crop.shape[0] == 0 or crop.shape[1] == 0:
+                continue
             crop_resized = cv2.resize(crop, (size, size))
             crop_resized = crop_resized.transpose(2, 0, 1)
             rois.append(crop_resized)
         return rois
     
-    def generate_labels(self, boxes, gt, thresh=0.1):
+    def generate_labels(self, boxes, gt, thresh=0.7):
         labels = []
         for box in boxes:
             iou_score = calc_iou(box, gt)

@@ -3,22 +3,20 @@ import numpy as np
 
 # Create a blank black image
 def create_dummy_video(num_frames = 50):
-    image = np.zeros((500, 500, 3), np.uint8)
 
     # Define initial position and velocity of the disk
     x = 150 # x coordinate of the center
     y = 150 # y coordinate of the center
-    r = 10 # radius of the disk
+    r = 30 # radius of the disk
     vx = 5 # x component of velocity
     vy = -5 # y component of velocity
 
     # Define a loop to animate the disk movement
     for _ in range (num_frames):
-        # Clear the previous image by filling it with black color
-        image[:] = (0, 0, 0)
-
+        image = np.random.random((500, 500, 3)) * 255
+        image = image.astype(dtype=np.uint8)
         # Draw a green circle at the current position
-        cv2.circle(image, (x, y), r, (0, 255, 0), -1)
+        cv2.circle(image, (x, y), r, (0, 0, 255), -1)
 
         # Display the image
         # cv2.imshow("Green Disk", image)

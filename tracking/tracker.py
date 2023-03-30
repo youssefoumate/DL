@@ -15,7 +15,7 @@ class Tracker():
         self.sampler = Sampling()
         self.sigmoid = torch.nn.Sigmoid()
         pass
-    def init_train(self, init_frame=None, init_gt=None, epochs=10):
+    def init_train(self, init_frame=None, init_gt=None, epochs=3):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         for _ in tqdm(range(epochs)):
             rois, _, labels = self.sampler.sample_generator(init_frame, init_gt, show=False)
@@ -37,10 +37,9 @@ class Tracker():
         init_frame = next(frame_gen)
         gt = init_frame[1]
         self.init_train(init_frame[0], gt)
-        self.model.eval()
+        self.model.eval() 
         for frame, _ in frame_gen:
             rois, coords, _ = self.sampler.sample_generator(frame, gt, show=False)
-            max_roi = None
             max_score = 0
             max_coord = []
             for roi_idx, (coord, roi) in enumerate(zip(coords, rois)):
@@ -49,13 +48,12 @@ class Tracker():
                 score = self.model(roi.unsqueeze(0))
                 if score > max_score or roi_idx == 0:
                     max_score = score
-                    max_roi = roi
                     max_coord = coord
             gt = [max_coord[0], max_coord[1], gt[2], gt[3]]
             cv2.rectangle(
                     frame, (int(gt[1] - gt[2]/2), int(gt[0] - gt[3]/2)),
                     (int(gt[1] + gt[2]/2), int(gt[0] + gt[3]/2)),
-                    (0, 255, 0), 1)
+                    (0, 255, 0), 3)
             cv2.imshow("frame", frame)
             cv2.waitKey(10)
 
