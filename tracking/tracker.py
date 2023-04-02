@@ -25,7 +25,7 @@ class Tracker():
                 roi = torch.tensor(roi, dtype=torch.float32)
                 label = torch.tensor(label, dtype=torch.float32).unsqueeze(0)
                 output = self.model(roi.unsqueeze(0))
-                loss = bce_loss(self.sigmoid(output), label.unsqueeze(0))
+                loss = bce_loss(self.sigmoid(output), label)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
