@@ -16,6 +16,7 @@ class Tracker():
         self.sampler = Sampling()
         self.sigmoid = torch.nn.Sigmoid()
         pass
+    
     def init_train(self, init_frame=None, init_gt=None, epochs=3):
         optimizer = torch.optim.Adam(list(self.backbone.parameters()) + list(self.classifier.parameters()), lr=0.001)
         for _ in tqdm(range(epochs)):

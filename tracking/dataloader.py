@@ -70,7 +70,7 @@ class Sampling():
             measured_x ,measured_y= measurements[sample_idx].astype(int)
         return predictions, measurements
     
-    def roi_crop(self, image, centers, w, h, size=512, show=False):
+    def roi_crop(self, image, centers, w, h, size=56, show=False):
         rois = []
         for center in centers:
             crop = image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :]
