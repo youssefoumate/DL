@@ -65,7 +65,7 @@ class ResBlock(nn.Module):
         return nn.ReLU()(input)
 
 class ResNet(nn.Module):
-    def __init__(self, in_channels=3, outputs=1):
+    def __init__(self, in_channels=3):
         super().__init__()
         resblock = ResBlock
         self.layer0 = nn.Sequential(
@@ -90,14 +90,10 @@ class ResNet(nn.Module):
             resblock(256, 256, downsample=False)
         )
 
-
         self.layer4 = nn.Sequential(
             resblock(256, 512, downsample=True),
             resblock(512, 512, downsample=False)
         )
-
-        self.gap = torch.nn.AdaptiveAvgPool2d(1)
-        self.fc = torch.nn.Linear(512, outputs)
 
     def forward(self, x):
         x = self.layer0(x)
@@ -105,17 +101,25 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        return x
+
+class BboxClassifier(nn.Module):
+    def __init__(self, outputs=1):
+        super().__init__()
+        self.backbone = ResNet()
+        self.gap = torch.nn.AdaptiveAvgPool2d(1)
+        self.fc = torch.nn.Linear(512, outputs)
+    def forward(self, x):
         x = self.gap(x)
         x = torch.flatten(x)
         x = self.fc(x)
-
         return x
 
 if __name__ == "__main__":
     mdnet = tinyMDNet()
-    resnet = ResNet()
+    resnet = BboxClassifier()
     x = Tensor.ones(1,3,256,256)
     out = mdnet(x)
-    x = torch.rand(1,3,255,255)
+    x = torch.rand(1,3,512,512)
     out_res = resnet(x)
     print(out.shape, out_res.size())
