@@ -72,13 +72,16 @@ class Sampling():
     
     def roi_crop(self, image, centers, w, h, size=56, show=False):
         rois = []
+        h = h//32
+        w = w//32
         for center in centers:
-            crop = image[int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2), :]
-            if crop.shape[0] == 0 or crop.shape[1] == 0:
+            center = [center[0]//32, center[1]//32]
+            crop = image[:, :, int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2)]
+            if crop.shape[2] == 0 or crop.shape[3] == 0:
                 continue
-            crop_resized = cv2.resize(crop, (size, size))
-            crop_resized = crop_resized.transpose(2, 0, 1)
-            rois.append(crop_resized)
+            #crop_resized = cv2.resize(crop, (size, size))
+            #crop_resized = crop_resized.transpose(2, 0, 1)
+            rois.append(crop)
         return rois
     
     def generate_labels(self, boxes, gt, thresh=0.7):
