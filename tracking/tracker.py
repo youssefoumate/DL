@@ -7,6 +7,7 @@ import cv2
 import torch
 from losses import bce_loss
 from tqdm import tqdm
+import numpy as np
 
 class Tracker():
     def __init__(self) -> None:
@@ -17,23 +18,26 @@ class Tracker():
         self.sigmoid = torch.nn.Sigmoid()
         pass
     
-    def init_train(self, init_frame=None, init_gt=None, epochs=20):
-        optimizer = torch.optim.Adam(list(self.backbone.parameters()) + list(self.classifier.parameters()), lr=0.001)
+    def init_train(self, init_frame=None, init_gt=None, epochs=100):
+        optimizer = torch.optim.Adam(list(self.backbone.parameters()) + list(self.classifier.parameters()), lr=0.01)
         init_frame = torch.tensor(init_frame.transpose(2, 0, 1), dtype=torch.float32)
         for _ in tqdm(range(epochs)):
             sum_loss = 0
             output = self.backbone(init_frame.unsqueeze(0))
-            rois, _, labels = self.sampler.sample_generator(output.detach().numpy(), init_gt, show=False)
+            cv2.imshow("feat_map", cv2.resize(np.average(output.clone().squeeze(0).detach().numpy(), 0), (256, 256)))
+            cv2.waitKey(1)
+            #exit()
+            rois, _, labels = self.sampler.sample_generator(output.clone().detach().numpy(), init_gt, show=False)
             for roi, label in zip(rois, labels):
                 roi = roi/255
                 roi = torch.tensor(roi, dtype=torch.float32)
                 label = torch.tensor(label, dtype=torch.float32).unsqueeze(0)
                 output = self.classifier(roi)
                 loss = bce_loss(self.sigmoid(output), label)
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                sum_loss += loss.item()
+                sum_loss += loss
+            optimizer.zero_grad()
+            sum_loss.backward()
+            optimizer.step()
             print(loss/len(rois))
 
     def track(self):
