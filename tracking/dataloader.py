@@ -72,19 +72,23 @@ class Sampling():
     
     def roi_crop(self, image, centers, w, h, size=56, show=False):
         rois = []
-        h = h//32
-        w = w//32
+        resize_factor = 20
+        h = h//resize_factor
+        w = w//resize_factor
+        #print(len(centers))
         for center in centers:
-            center = [center[0]//32, center[1]//32]
+            #print(center)
+            center = [center[0]//resize_factor, center[1]//resize_factor]
             crop = image[:, :, int(max(0, center[0]-h/2)):int(center[0]+h/2), int(max(0, center[1]-w/2)):int(center[1]+w/2)]
-            if crop.shape[2] == 0 or crop.shape[3] == 0:
+            #print(crop.shape)
+            if crop.shape[2] != 3 or crop.shape[3] != 3:
                 continue
             #crop_resized = cv2.resize(crop, (size, size))
             #crop_resized = crop_resized.transpose(2, 0, 1)
             rois.append(crop)
         return rois
     
-    def generate_labels(self, boxes, gt, thresh=0.7):
+    def generate_labels(self, boxes, gt, thresh=0.3):
         labels = []
         for box in boxes:
             iou_score = calc_iou(box, gt)
@@ -99,9 +103,11 @@ class Sampling():
         self.kalman_setup(gt)
         preds, measures = self.kalman_sampling(gt)
         preds.extend(measures)
+        #print("roi_crop")
         rois = self.roi_crop(image, preds, gt[2], gt[3], show=True)
         labels = self.generate_labels(preds, gt)
         if show:
+            image = cv2.resize(np.average(image.squeeze(0), 0), (256, 256))
             cv2.rectangle(
                     image, (int(gt[0] - gt[2]/2), int(gt[1] - gt[3]/2)),
                     (int(gt[0] + gt[2]/2), int(gt[1] + gt[3]/2)),
@@ -109,10 +115,11 @@ class Sampling():
             for pred_box, roi, label in zip(preds, rois, labels):
                 pred_color = (255*label, 0, 255*(1 - label))
                 cv2.rectangle(
-                    image, (int(pred_box[0] - gt[2]/2), int(pred_box[1] - gt[3]/2)),
-                    (int(pred_box[0] + gt[2]/2), int(pred_box[1] + gt[3]/2)),
+                    image, (int(pred_box[0]//2 - gt[2]/2), int(pred_box[1]//2 - gt[3]/2)),
+                    (int(pred_box[0]//2 + gt[2]/2), int(pred_box[1]//2 + gt[3]/2)),
                     pred_color, 1)
-                cv2.imshow("roi", roi)
+                image = cv2.resize(image, (256, 256))
+                #cv2.imshow("roi", roi)
                 cv2.imshow("img", image)
                 cv2.waitKey(0)
         return rois, preds, labels

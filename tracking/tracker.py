@@ -19,7 +19,7 @@ class Tracker():
         self.sigmoid = torch.nn.Sigmoid()
         pass
     
-    def init_train(self, init_frame=None, init_gt=None, epochs=100):
+    def init_train(self, init_frame=None, init_gt=None, epochs=20):
         reg_optimizer = torch.optim.Adam(list(self.backbone.parameters()) + 
                                     list(self.regressor.parameters()), 
                                     lr=0.01)
@@ -30,8 +30,6 @@ class Tracker():
         print("train bbox regressor...")
         for _ in tqdm(range(epochs)):
             out_feat = self.backbone(init_frame.unsqueeze(0))
-            cv2.imshow("feat_map", cv2.resize(np.average(out_feat.squeeze(0).detach().numpy(), 0), (256, 256)))
-            cv2.waitKey(1)
             pred_coords = self.regressor(out_feat)
             init_gt = torch.tensor(init_gt).float()
             loss = mse_loss(pred_coords, init_gt)
@@ -44,8 +42,6 @@ class Tracker():
             sum_loss = 0
             output = self.backbone(init_frame.unsqueeze(0))
             out_sample = output.clone()
-            cv2.imshow("feat_map", cv2.resize(np.average(out_sample.squeeze(0).detach().numpy(), 0), (256, 256)))
-            cv2.waitKey(1)
             #exit()
             rois, _, labels = self.sampler.sample_generator(out_sample.detach().numpy(), init_gt, show=False)
             for roi, label in zip(rois, labels):
@@ -71,11 +67,14 @@ class Tracker():
             frame_in = torch.tensor(frame.transpose(2, 0, 1), dtype=torch.float32)
             output = self.backbone(frame_in.unsqueeze(0))
             rois, coords, _ = self.sampler.sample_generator(output.detach().numpy(), gt, show=False)
+            cv2.imshow("feat_map", cv2.resize(np.average(output.squeeze(0).detach().numpy(), 0), (256, 256)))
+            cv2.waitKey(1)
             max_score = 0
             max_coord = []
             for roi_idx, (coord, roi) in enumerate(zip(coords, rois)):
                 roi = roi/255
                 roi = torch.tensor(roi, dtype=torch.float32)
+                print(roi.shape)
                 score = self.classifier(roi)
                 if score > max_score or roi_idx == 0:
                     max_score = score

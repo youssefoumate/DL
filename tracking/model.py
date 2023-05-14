@@ -107,7 +107,7 @@ class BboxClassifier(nn.Module):
     def __init__(self, outputs=1):
         super().__init__()
         self.gap = torch.nn.AdaptiveAvgPool2d(1)
-        self.fc = torch.nn.Linear(512, outputs)
+        self.fc = torch.nn.Linear(512*(3**2), outputs)
     def forward(self, x):
         x = torch.flatten(x)
         x = self.fc(x)
