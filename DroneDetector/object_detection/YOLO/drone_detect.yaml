@@ -1,0 +1,7 @@
+path: /home/youssef/DroneDetector/dataset/yolo_splits/
+train: 'train/images'
+val: 'valid/images'
+ 
+# class names
+names: 
+  0: 'drone'
