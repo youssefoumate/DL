@@ -6,6 +6,7 @@ from tqdm import tqdm
 from detectron2.engine import DefaultPredictor
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
+from config import infer_setup
 
 class DroneInference():
     """This class detects defects in the image
@@ -20,13 +21,7 @@ class DroneInference():
         self.cfg.merge_from_file(
             model_zoo.get_config_file(
                 "COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml"))
-        self.cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
-        self.cfg.INPUT.MAX_SIZE_TEST = 1024
-        self.cfg.MODEL.DEVICE = "cuda:0"
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.01
-        self.cfg.MODEL.ROI_HEADS.NMS_THRESH_TEST = 0.01
-        self.cfg.MODEL.WEIGHTS = "../../weights/model_maskrcnn.pth"
-        self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
+        self.cfg = infer_setup(self.cfg, opt)
         self.predictor = DefaultPredictor(self.cfg)
         self.root_input_folder = "input"
 
@@ -68,6 +63,7 @@ class DroneInference():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--video', type=str, default="../../dataset/video/Test01.mp4")
+    parser.add_argument('--device', type=str, default="cuda:0")
     opt = parser.parse_args()
     drone_detect = DroneInference(opt.video)
     drone_detect()
