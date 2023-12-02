@@ -12,7 +12,8 @@ https://github.com/youssefoumate/DroneDetector/assets/17303586/c6061a36-41f5-452
 - Pytorch==2.0.1
 - Detectron2 
 ```
-python3 -m pip install 'git+https://github.com/facebookresearch/detectron2.git'@v0.6
+$git clone https://github.com/facebookresearch/detectron2.git
+$python3 -m pip install -e detectron2
 ```
 - OpenCV
 - ultralytics
@@ -52,8 +53,16 @@ user@server:~/DroneDetector/object_detection/maskRCNN$ python3 inference.py --vi
 - Inference
 
 ```
-
 user@server:~/DroneDetector$ cd object_detection/object_detect_track
 user@server:~/DroneDetector/object_detection$ export PYTHONPATH=./pysot:$PYTHONPATH
 user@server:~/DroneDetector/object_detection$ python3 detect_track.py --video [video_path]
+```
+
+## Deploy
+- MaskRCNN
+
+```
+user@server:~/DroneDetector$ cd deploy/object_detection/
+user@server:~/DroneDetector/deploy/object_detection/$ python3.9 maskrcnn_export.py --output ./output --export-method tracing --format torchscript MODEL.WEIGHTS ../../weights/model_maskrcnn.pth MODEL.DEVICE cpu
+user@server:~/DroneDetector/object_detection$ python3 inference_exported_model.py
 ```
