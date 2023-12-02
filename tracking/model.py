@@ -1,10 +1,10 @@
 """ Model Architecture Module
 """
 
-from tinygrad.tensor import Tensor
-import tinygrad
 import torch
 import torch.nn as nn
+from tinygrad.tensor import Tensor
+import tinygrad
 
 class tinyMDNet():
     def __init__(self, K=1):
@@ -106,27 +106,20 @@ class ResNet(nn.Module):
 class BboxClassifier(nn.Module):
     def __init__(self, outputs=1):
         super().__init__()
+        self.backbone = ResNet()
         self.gap = torch.nn.AdaptiveAvgPool2d(1)
-        self.fc = torch.nn.Linear(512*(3**2), outputs)
+        self.fc = torch.nn.Linear(512, outputs)
     def forward(self, x):
-        x = torch.flatten(x)
-        x = self.fc(x)
-        return x
-    
-class BboxRegressor(nn.Module):
-    def __init__(self, outputs=4):
-        super().__init__()
-        self.gap = torch.nn.AdaptiveAvgPool2d(1)
-        self.fc = torch.nn.Linear(512*(16**2), outputs)
-    def forward(self, x):
+        x = self.gap(x)
         x = torch.flatten(x)
         x = self.fc(x)
         return x
 
 if __name__ == "__main__":
-    backbone = ResNet()
-    bbox_regressor = BboxRegressor()
+    mdnet = tinyMDNet()
+    resnet = BboxClassifier()
+    x = Tensor.ones(1,3,256,256)
+    out = mdnet(x)
     x = torch.rand(1,3,512,512)
-    x = backbone(x)
-    out = bbox_regressor(x)
-    print(out.size())
+    out_res = resnet(x)
+    print(out.shape, out_res.size())
